@@ -271,6 +271,19 @@
   /* upload kit rows reuse cap-row */
   footer-space { display: none; }
 
+  /* keys modal */
+  .modal-back { position: fixed; inset: 0; z-index: 300; background: rgba(6,6,9,.72); backdrop-filter: blur(5px); display: grid; place-items: center; padding: 20px; }
+  .modal-back[hidden] { display: none; }
+  .modal { width: min(470px, 100%); background: var(--card); border: 1px solid var(--line-strong); border-radius: 15px; padding: 20px; box-shadow: 0 26px 70px rgba(0,0,0,.65); }
+  .modal h4 { margin-bottom: 2px; }
+  .modal .hint a { color: var(--pink); }
+  .modal input[type="text"], .modal input[type="password"] {
+    width: 100%; background: var(--card2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 9px; padding: 10px 12px; font-size: .86rem; font-family: inherit; outline: none;
+  }
+  .modal input:focus { border-color: var(--pink); }
+  .modal .btn-row { margin-top: 16px; }
+
   @media (max-width: 980px) {
     .inspector { display: none; }
     :root { --rail-w: 64px; }
@@ -296,7 +309,26 @@
       <button class="active" data-mode="long">long-form</button>
       <button data-mode="clips">clip hunter</button>
     </div>
+    <button class="btn ghost small" id="keysBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><circle cx="7" cy="15" r="3"/><path d="M10 15l7-7 4 4-2 2-2-2"/></svg>keys</button>
     <button class="btn small" id="topExportBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>export</button>
+  </div>
+
+  <!-- ═══ KEYS MODAL ═══ -->
+  <div class="modal-back" id="keysModal" hidden>
+    <div class="modal">
+      <h4>your ai keys</h4>
+      <div class="hint">paste them once — they only live in <b>this browser</b> (localStorage), never on a server. free: <b>groq.com/developers</b> → api keys · <b>aistudio.google.com</b> → get api key.</div>
+      <label>groq api key <span style="text-transform:none">— whisper captions + transcript</span></label>
+      <input type="password" id="keyGroq" placeholder="gsk_..." autocomplete="off" spellcheck="false">
+      <label>gemini api key <span style="text-transform:none">— clip hunter</span></label>
+      <input type="password" id="keyGemini" placeholder="AIza..." autocomplete="off" spellcheck="false">
+      <div class="btn-row">
+        <button class="btn" id="keysSave">save keys</button>
+        <button class="btn ghost" id="keysClear">clear</button>
+        <button class="btn ghost" id="keysClose">close</button>
+      </div>
+      <div class="err" id="keysErr" hidden></div>
+    </div>
   </div>
 
   <div class="main">
@@ -536,6 +568,8 @@ const state = {
   style: 'mizvillan',
   cloud: { groq: 0, gemini: 0 },
   apiBase: '',
+  keys: loadKeys(),
+  direct: false,
   sfxQueue: [], sfxCustom: [],
   renderWindow: null, previewStop: null,
   selectedSfx: null,
@@ -563,23 +597,34 @@ async function findServer() {
   }
   return null;
 }
+const BOLT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>';
+const WARN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>';
+function applyBrainBadge() {
+  state.direct = !!(state.keys.groq || state.keys.gemini);
+  const srv = (state.cloud.groq + state.cloud.gemini) > 0;
+  const mine = state.direct ? [state.keys.groq && 'groq', state.keys.gemini && 'gemini'].filter(Boolean) : [];
+  const el = $('brainBadge');
+  if (srv || mine.length) {
+    const bits = [];
+    if (srv) bits.push(`server · groq x${state.cloud.groq} · gemini x${state.cloud.gemini}`);
+    if (mine.length) bits.push(`your keys · ${mine.join(' + ')}`);
+    el.className = 'badge';
+    el.innerHTML = BOLT + bits.join(' · ');
+    $('brainHint').textContent = 'cloud whisper-large: a 30min video in ~1 min. recommended.';
+  } else {
+    el.className = 'badge gray';
+    el.innerHTML = WARN + 'browser brain only — paste keys or start the local server';
+    $('brainHint').textContent = 'no cloud → small in-browser brain is used (slower). hit "keys" up top to unlock groq + gemini.';
+  }
+}
 async function checkServer() {
   const d = await findServer();
-  if (d) {
-    state.cloud = d;
-    const total = d.groq + d.gemini;
-    $('brainBadge').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>' + (total ? `cloud brain — groq x${d.groq} · gemini x${d.gemini}` : 'server up, no keys');
-    $('brainHint').textContent = 'cloud whisper-large: a 30min video in ~1 min. recommended.';
-    loadSfxList();
-    return true;
-  }
-  state.cloud = { groq: 0, gemini: 0 };
-  $('brainBadge').className = 'badge gray';
-  $('brainBadge').innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>browser brain only — no key proxy detected';
-  $('brainHint').textContent = 'no cloud proxy → small in-browser brain is used (slower).';
+  state.cloud = d || { groq: 0, gemini: 0 };
+  applyBrainBadge();
   loadSfxList();
-  return false;
+  return !!d;
 }
+applyBrainBadge();
 checkServer();
 
 /* ── nav: rail tabs + modes ── */
@@ -970,7 +1015,7 @@ let sfxBuffers = {};
 
 async function loadSfxList() {
   try {
-    const r = await fetch('/api/sfx', { signal: AbortSignal.timeout(2500) });
+    const r = await fetch(state.apiBase + '/api/sfx', { signal: AbortSignal.timeout(2500) });
     if (r.ok) {
       const d = await r.json();
       state.sfxCustom = (d.sounds || []).map((f) => ({ id: 'file:' + f, name: f.replace(/\.[^.]+$/, '') }));
@@ -1122,7 +1167,7 @@ $('transcribeBtn').addEventListener('click', async () => {
   const err = $('capsErr'), ok = $('capsOk');
   err.hidden = true; ok.hidden = true;
   if (!state.mono) { err.textContent = 'no audio — re-import the clip'; err.hidden = false; return; }
-  const useCloud = $('brainSel').value === 'cloud' && state.cloud.groq > 0;
+  const useCloud = $('brainSel').value === 'cloud' && (!!state.keys.groq || state.cloud.groq > 0);
   try {
     $('transcribeBtn').disabled = true;
     $('aiProgress').hidden = false; $('aiProgressFill').style.width = '2%';
@@ -1147,12 +1192,107 @@ $('transcribeBtn').addEventListener('click', async () => {
   } finally { $('transcribeBtn').disabled = false; }
 });
 
+/* ── audio → 16kHz mono wav blob (feeds whisper) ── */
+function encodeWav16k() {
+  const mono = state.mono, sr = state.sampleRate;
+  if (!mono || !sr) throw new Error('no audio — re-import the video');
+  const target = 16000, ratio = sr / target;
+  const outLen = Math.max(1, Math.floor(mono.length / ratio));
+  const buf = new ArrayBuffer(44 + outLen * 2);
+  const dv = new DataView(buf);
+  const wstr = (off, s) => { for (let i = 0; i < s.length; i++) dv.setUint8(off + i, s.charCodeAt(i)); };
+  wstr(0, 'RIFF'); dv.setUint32(4, 36 + outLen * 2, true); wstr(8, 'WAVE');
+  wstr(12, 'fmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true);
+  dv.setUint16(22, 1, true); dv.setUint32(24, target, true); dv.setUint32(28, target * 2, true);
+  dv.setUint16(32, 2, true); dv.setUint16(34, 16, true);
+  wstr(36, 'data'); dv.setUint32(40, outLen * 2, true);
+  let o = 44;
+  for (let i = 0; i < outLen; i++) {
+    const s0 = Math.floor(i * ratio);
+    const s1 = Math.min(Math.max(s0 + 1, Math.floor((i + 1) * ratio)), mono.length);
+    let sum = 0;
+    for (let j = s0; j < s1; j++) sum += mono[j];
+    let v = sum / Math.max(1, s1 - s0);
+    v = Math.max(-1, Math.min(1, v));
+    dv.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7FFF, true); o += 2;
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+/* ── byo keys (live site: browser → groq/gemini directly, no server) ── */
+function loadKeys() { try { return JSON.parse(localStorage.getItem('msv_studio_keys') || '{}') || {}; } catch { return {}; } }
+function saveKeys(k) { localStorage.setItem('msv_studio_keys', JSON.stringify(k)); }
+function openKeys() {
+  $('keyGroq').value = state.keys.groq || '';
+  $('keyGemini').value = state.keys.gemini || '';
+  $('keysErr').hidden = true;
+  $('keysModal').hidden = false;
+  setTimeout(() => $('keyGroq').focus(), 30);
+}
+function closeKeys() { $('keysModal').hidden = true; }
+$('keysBtn').addEventListener('click', openKeys);
+$('keysClose').addEventListener('click', closeKeys);
+$('keysModal').addEventListener('click', (e) => { if (e.target === $('keysModal')) closeKeys(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeKeys(); });
+$('keysClear').addEventListener('click', () => {
+  state.keys = {}; saveKeys({}); applyBrainBadge(); closeKeys();
+});
+$('keysSave').addEventListener('click', () => {
+  const k = { groq: $('keyGroq').value.trim(), gemini: $('keyGemini').value.trim() };
+  const got = [k.groq && 'groq', k.gemini && 'gemini'].filter(Boolean);
+  if (!got.length) { $('keysErr').textContent = 'paste at least one key first (or hit clear)'; $('keysErr').hidden = false; return; }
+  state.keys = k; saveKeys(k); applyBrainBadge(); closeKeys();
+});
+
+async function directHighlights(transcript, style, maxClips, minLen, maxLen) {
+  const k = state.keys.gemini;
+  if (!k) throw new Error('no gemini key saved — hit "keys" in the top bar first');
+  const prompt = 'You are a viral clip scout for a gaming YouTuber. Below are timestamped transcript segments of a video. Pick the best standalone moments as clips.\n'
+    + `Video type: ${style}\nNumber of clips: ${maxClips}\nClip length: ${minLen}-${maxLen} seconds.\n`
+    + 'Rules: each clip must be genuinely funny/scary/hype ON ITS OWN (no context needed), start at a segment boundary, prefer moments with reactions, jumpscares, fails, comebacks or big emotions. Score 1-10 on viral potential.\n'
+    + 'Reply with ONLY a JSON array like: [{"start":12.5,"end":47.2,"title":"3-6 word punchy title","hook":"why it slaps in 8 words","score":9}]\n\n'
+    + 'TRANSCRIPT SEGMENTS:\n' + transcript.slice(0, 120000);
+  let lastErr = 'no gemini models tried';
+  for (const m of ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-flash-latest', 'gemini-2.5-flash']) {
+    try {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(k)}`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: prompt }] }], generationConfig: { temperature: 0.7 } }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { lastErr = `${m}: ${data.error?.message || 'HTTP ' + res.status}`; continue; }
+      const text = (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
+      const mt = text.match(/\[[\s\S]*\]/);
+      if (!mt) { lastErr = `${m}: no json in reply`; continue; }
+      const clips = JSON.parse(mt[0]);
+      if (clips?.length) return clips;
+      lastErr = `${m}: empty clip list`;
+    } catch (e) { lastErr = `${m}: ${e.message || e}`; }
+  }
+  throw new Error(lastErr);
+}
+
 async function cloudTranscribe() {
-  const wav = await encodeWav16k();
+  const wav = encodeWav16k();
   setAI('sending audio to groq whisper-large...', 15);
-  const res = await fetch('/api/transcribe', { method: 'POST', body: wav });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || `server said ${res.status}`);
+  let data;
+  if (state.direct && state.keys.groq) {
+    const fd = new FormData();
+    fd.append('file', wav, 'audio.wav');
+    fd.append('model', 'whisper-large-v3-turbo');
+    fd.append('response_format', 'verbose_json');
+    fd.append('timestamp_granularities[]', 'segment');
+    const r = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST', headers: { Authorization: 'Bearer ' + state.keys.groq }, body: fd,
+    });
+    data = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(data.error?.message || `groq said ${r.status}`);
+  } else {
+    if (!state.apiBase) throw new Error('no cloud server + no groq key — paste your groq key via "keys" in the top bar');
+    const res = await fetch(state.apiBase + '/api/transcribe', { method: 'POST', body: wav });
+    data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || `server said ${res.status}`);
+  }
   setAI('transcript received ✅', 60);
   const segs = (data.segments || []).map((s) => ({ start: s.start, end: s.end, text: s.text || '' }));
   if (!segs.length && data.text) segs.push({ start: 0, end: state.duration, text: data.text });
@@ -1225,7 +1365,7 @@ $('huntBtn').addEventListener('click', async () => {
     $('huntProgress').hidden = false; $('huntFill').style.width = '2%';
     let segments = state.segments;
     if (!segments.length) {
-      if (state.cloud.groq > 0) {
+      if (state.keys.groq || state.cloud.groq > 0) {
         setAI('cloud brain is watching your whole video...', 8);
         segments = (await cloudTranscribe()).segments;
       } else {
@@ -1239,14 +1379,21 @@ $('huntBtn').addEventListener('click', async () => {
     setAI(`transcript done (${segments.length} segments) — the clip scout is reading everything...`, 62);
     const [minLen, maxLen] = $('huntLen').value.split('-').map(Number);
     const transcript = segments.map((s) => `${s.start.toFixed(1)}-${s.end.toFixed(1)}: ${s.text.trim()}`).join('\n');
-    const res = await fetch('/api/highlights', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transcript, style: $('huntStyle').value, maxClips: +$('huntCount').value, minLen, maxLen }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data.clips?.length) throw new Error(data.error || 'the ai couldnt find clips');
-    state.clips = data.clips;
+    let clips;
+    if (state.direct) {
+      clips = await directHighlights(transcript, $('huntStyle').value, +$('huntCount').value, minLen, maxLen);
+    } else {
+      if (!state.apiBase) throw new Error('no ai server — paste your gemini key via "keys" in the top bar to run the clip scout');
+      const res = await fetch(state.apiBase + '/api/highlights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript, style: $('huntStyle').value, maxClips: +$('huntCount').value, minLen, maxLen }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.clips?.length) throw new Error(data.error || 'the ai couldnt find clips');
+      clips = data.clips;
+    }
+    state.clips = clips;
     $('huntFill').style.width = '100%';
     setTimeout(() => { $('huntProgress').hidden = true; $('huntFill').style.width = '0%'; }, 800);
     ok.textContent = `🏆 ${state.clips.length} clips found — click one on the timeline or preview here, then export vertical`;
@@ -1629,6 +1776,9 @@ function fmt(s) {
   const m = Math.floor(s / 60), ss = Math.floor(s % 60);
   return `${m}:${String(ss).padStart(2, '0')}`;
 }
+
+// debug handle (same-origin only)
+window.MSV = { state, encodeWav16k, applyBrainBadge, cloudTranscribe, directHighlights, loadKeys, saveKeys };
 
 // no-file timeline state
 tlBuild();

@@ -1,4 +1,0 @@
-[studio] "GET /api/keys HTTP/1.1" 200 -
-[studio] "POST /api/highlights HTTP/1.1" 502 -
-[studio] "GET /api/keys HTTP/1.1" 200 -
-[studio] "POST /api/highlights HTTP/1.1" 502 -
