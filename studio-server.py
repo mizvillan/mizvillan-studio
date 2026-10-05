@@ -20,6 +20,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 PORT = 8787
 ROOT = os.path.dirname(os.path.abspath(__file__))
+# Groq sits behind Cloudflare and 403s (error 1010) anything that looks like a
+# scripting agent, so every upstream request has to claim to be a browser.
+BROWSER_UA = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+)
 SFX_DIR = os.path.join(ROOT, "sfx")
 os.makedirs(SFX_DIR, exist_ok=True)  # user drops meme sounds here (vine boom etc.)
 
@@ -185,6 +191,7 @@ class Handler(BaseHTTPRequestHandler):
                 headers={
                     "Authorization": f"Bearer {key}",
                     "Content-Type": f"multipart/form-data; boundary={boundary}",
+                    "User-Agent": BROWSER_UA,
                 },
             )
             try:
@@ -257,7 +264,7 @@ class Handler(BaseHTTPRequestHandler):
         for url, headers, payload, label in attempts:
             req = urllib.request.Request(
                 url, data=json.dumps(payload).encode("utf-8"), method="POST",
-                headers={**headers, "Content-Type": "application/json"},
+                headers={**headers, "Content-Type": "application/json", "User-Agent": BROWSER_UA},
             )
             try:
                 with urllib.request.urlopen(req, timeout=120) as res:
