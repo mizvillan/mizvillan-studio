@@ -568,6 +568,7 @@ const state = {
   style: 'mizvillan',
   cloud: { groq: 0, gemini: 0 },
   apiBase: '',
+  serverUp: false,
   keys: loadKeys(),
   direct: false,
   sfxQueue: [], sfxCustom: [],
@@ -592,9 +593,10 @@ async function findServer() {
   for (const base of ['', 'http://localhost:8787', 'http://127.0.0.1:8787']) {
     try {
       const r = await fetch(base + '/api/keys', { signal: AbortSignal.timeout(3000) });
-      if (r.ok) { state.apiBase = base; return await r.json(); }
+      if (r.ok) { state.apiBase = base; state.serverUp = true; return await r.json(); }
     } catch {}
   }
+  state.serverUp = false;
   return null;
 }
 const BOLT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>';
@@ -1289,7 +1291,7 @@ async function cloudTranscribe() {
     data = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(data.error?.message || `groq said ${r.status}`);
   } else {
-    if (!state.apiBase) throw new Error('no cloud server + no groq key — paste your groq key via "keys" in the top bar');
+    if (!state.serverUp) throw new Error('no cloud server + no groq key — paste your groq key via "keys" in the top bar');
     const res = await fetch(state.apiBase + '/api/transcribe', { method: 'POST', body: wav });
     data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `server said ${res.status}`);
@@ -1384,7 +1386,7 @@ $('huntBtn').addEventListener('click', async () => {
     if (state.direct) {
       clips = await directHighlights(transcript, $('huntStyle').value, +$('huntCount').value, minLen, maxLen);
     } else {
-      if (!state.apiBase) throw new Error('no ai server — paste your gemini key via "keys" in the top bar to run the clip scout');
+      if (!state.serverUp) throw new Error('no ai server — paste your gemini key via "keys" in the top bar to run the clip scout');
       const res = await fetch(state.apiBase + '/api/highlights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
