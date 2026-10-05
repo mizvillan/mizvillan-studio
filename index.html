@@ -706,6 +706,7 @@ async function loadFile(file) {
     $('loadedHint').textContent = `⚠️ audio undecodable — cutting/transcribing won't work, try mp4.`;
     clearAI();
   }
+  enableStep('caps');
   enableStep(state.mode === 'long' ? 'cuts' : 'clips');
   sizePreview();
   tlBuild();
@@ -1634,7 +1635,7 @@ $('renderBtn').addEventListener('click', async () => {
   $('renderBtn').disabled = false;
   const blob = new Blob(parts, { type: mime || 'video/webm' });
   const url = URL.createObjectURL(blob);
-  const dl = $('downloadBtn') || (() => { const a = document.createElement('a'); a.id = 'downloadBtn'; a.className = 'btn btn-block'; $('panel-export .card').appendChild(a); return a; })();
+  const dl = $('downloadBtn') || (() => { const a = document.createElement('a'); a.id = 'downloadBtn'; a.className = 'btn btn-block'; document.querySelector('#panel-export .card').appendChild(a); return a; })();
   dl.href = url; dl.hidden = false;
   dl.download = `mizvillan-studio-${vertical ? 'shorts' : 'full'}.${ext}`;
   dl.textContent = `⬇ download ${(blob.size / 1048576).toFixed(1)}mb ${ext.toUpperCase()}`;
