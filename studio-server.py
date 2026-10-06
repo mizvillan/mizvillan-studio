@@ -91,7 +91,11 @@ def _yt_msg(err):
 
 def _yt_existing(vid):
     """Cached pull for this video id, if the file is still around."""
-    for f in os.listdir(YT_DIR):
+    try:
+        names = os.listdir(YT_DIR)
+    except OSError:
+        return None
+    for f in names:
         stem, ext = os.path.splitext(f)
         if stem == vid and ext.lower() in (".mp4", ".mkv", ".webm"):
             path = os.path.join(YT_DIR, f)
@@ -100,6 +104,7 @@ def _yt_existing(vid):
     return None
 
 def yt_worker(job, url):
+    os.makedirs(YT_DIR, exist_ok=True)
     _yt_purge_cache()
     if yt_dlp is None:
         return _yt_set(job, status="error",
