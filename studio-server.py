@@ -53,7 +53,8 @@ def _find_ffmpeg():
 FFMPEG = _find_ffmpeg()
 YT_DIR = os.path.join(ROOT, "_yt")
 os.makedirs(YT_DIR, exist_ok=True)
-YT_MAX_SECS = 30 * 60        # the browser has to hold the audio in RAM
+YT_MAX_SECS = 30 * 60        # the browser has to hold the video + audio in RAM
+YT_MAX_SECS_AUDIO = 6 * 3600  # audio is tiny — a whole podcast is fine
 YT_MAX_FILES = 6             # keep the pull cache tidy
 YT_JOBS = {}
 YT_LOCK = threading.Lock()
@@ -89,21 +90,24 @@ def _yt_msg(err):
         return "that video is private"
     return line[:300]
 
-def _yt_existing(vid):
+def _yt_existing(vid, kind):
     """Cached pull for this video id, if the file is still around."""
     try:
         names = os.listdir(YT_DIR)
     except OSError:
         return None
+    # audio pulls are saved as <id>.audio.<ext> so they never shadow a video
+    want = vid + ".audio" if kind == "audio" else vid
+    exts = (".mp3", ".m4a", ".opus", ".aac", ".wav", ".webm") if kind == "audio" else (".mp4", ".mkv", ".webm")
     for f in names:
         stem, ext = os.path.splitext(f)
-        if stem == vid and ext.lower() in (".mp4", ".mkv", ".webm"):
+        if stem == want and ext.lower() in exts:
             path = os.path.join(YT_DIR, f)
             if os.path.isfile(path) and os.path.getsize(path) > 0:
                 return f
     return None
 
-def yt_worker(job, url):
+def yt_worker(job, url, kind="video"):
     os.makedirs(YT_DIR, exist_ok=True)
     _yt_purge_cache()
     if yt_dlp is None:
@@ -113,13 +117,24 @@ def yt_worker(job, url):
         return _yt_set(job, status="error",
                        error="ffmpeg missing — run: py -m pip install imageio-ffmpeg")
 
+    audio = kind == "audio"
     opts = dict(
         quiet=True, no_warnings=True, noprogress=True, noplaylist=True,
         ffmpeg_location=FFMPEG,
-        format=YT_FORMAT,
-        merge_output_format="mp4",
-        outtmpl=os.path.join(YT_DIR, "%(id)s.%(ext)s"),
+        format="bestaudio/best" if audio else YT_FORMAT,
+        merge_output_format=None if audio else "mp4",
+        outtmpl=os.path.join(
+            YT_DIR,
+            "%(id)s.audio.%(ext)s" if audio else "%(id)s.%(ext)s",
+        ),
     )
+    if audio:
+        opts["postprocessors"] = [{
+            "key": "FFmpegExtractAudio",
+            "preferredcodec": "mp3",
+            "preferredquality": "192",
+        }]
+    max_secs = YT_MAX_SECS_AUDIO if audio else YT_MAX_SECS
     try:
         _yt_set(job, status="meta", pct=3)
         with yt_dlp.YoutubeDL(opts) as ydl:
@@ -133,13 +148,16 @@ def yt_worker(job, url):
             if not vid or not dur:
                 return _yt_set(job, status="error",
                                error="couldnt read that link — is it a normal youtube url?")
-            if dur > YT_MAX_SECS:
+            if dur > max_secs:
+                cap = (YT_MAX_SECS_AUDIO // 3600) if audio else (YT_MAX_SECS // 60)
+                unit = "hours" if audio else "min"
                 return _yt_set(job, status="error",
-                               error=(f"that video is {dur // 60} min — link pull caps at "
-                                      f"{YT_MAX_SECS // 60} min. drop your own file for long stuff."))
-            _yt_set(job, title=title, duration=dur)
+                               error=(f"that video is {dur // (3600 if audio else 60)} "
+                                      f"{'hours' if audio else 'min'} — {kind} extract caps at "
+                                      f"{cap} {unit}. drop your own file for longer stuff."))
+            _yt_set(job, title=title, duration=dur, kind=kind)
 
-            hit = _yt_existing(vid)
+            hit = _yt_existing(vid, kind)
             if not hit:
                 def hook(d):
                     st = d.get("status")
@@ -153,7 +171,7 @@ def yt_worker(job, url):
                 opts["progress_hooks"] = [hook]
                 with yt_dlp.YoutubeDL(opts) as ydl2:
                     ydl2.extract_info(url, download=True)
-                hit = _yt_existing(vid)
+                hit = _yt_existing(vid, kind)
             if not hit:
                 return _yt_set(job, status="error", error="download finished but no file showed up")
     except Exception as e:  # noqa: BLE001
@@ -161,7 +179,7 @@ def yt_worker(job, url):
 
     path = os.path.join(YT_DIR, hit)
     _yt_set(job, status="done", pct=100, file="/_yt/" + hit, size=os.path.getsize(path))
-    print(f"[studio] pulled {title[:50]!r} -> {hit} ({os.path.getsize(path) // 1024} KB)",
+    print(f"[studio] pulled {kind} {title[:50]!r} -> {hit} ({os.path.getsize(path) // 1024} KB)",
           file=sys.stderr)
 
 # .env files to mine for keys (siblings of this folder)
@@ -322,6 +340,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send_json({"error": "bad json"}, 400)
 
         url = (data.get("url") or "").strip()
+        kind = str(data.get("kind") or "video").strip().lower()
+        if kind not in ("video", "audio"):
+            kind = "video"
         parts = urllib.parse.urlsplit(url)
         host = (parts.hostname or "").lower()
         yt_hosts = ("youtube.com", "youtu.be", "youtube-nocookie.com")
@@ -329,7 +350,7 @@ class Handler(BaseHTTPRequestHandler):
         if parts.scheme not in ("http", "https") or not on_yt:
             return self.send_json({"error": "thats not a youtube link"}, 400)
 
-        jid = hashlib.sha1(url.encode("utf-8")).hexdigest()[:16]
+        jid = hashlib.sha1((url + "|" + kind).encode("utf-8")).hexdigest()[:16]
         with YT_LOCK:
             old = YT_JOBS.get(jid)
             if old:
@@ -340,13 +361,13 @@ class Handler(BaseHTTPRequestHandler):
                 ):
                     return self.send_json({"job": jid})   # cached — instant, no re-download
                 # error, or the cached file got purged → run it again below
-            job = {"id": jid, "status": "queued", "pct": 0, "url": url}
+            job = {"id": jid, "status": "queued", "pct": 0, "url": url, "kind": kind}
             YT_JOBS[jid] = job
             if len(YT_JOBS) > 12:                          # dont leak jobs forever
                 for k in list(YT_JOBS)[: len(YT_JOBS) - 12]:
                     if YT_JOBS[k]["status"] not in ("meta", "downloading", "merging"):
                         YT_JOBS.pop(k, None)
-        threading.Thread(target=yt_worker, args=(job, url), daemon=True).start()
+        threading.Thread(target=yt_worker, args=(job, url, kind), daemon=True).start()
         return self.send_json({"job": jid}, 202)
 
     def proxy_transcribe(self, audio):

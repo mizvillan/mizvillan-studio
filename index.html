@@ -11,13 +11,13 @@
     --bg: #09090d; --card: #131318; --card2: #1b1b22; --card3: #22222b;
     --line: rgba(255,255,255,.08); --line-strong: rgba(255,255,255,.16);
     --text: #f4f4f6; --dim: #a1a1ad;
-    --pink: #ec4899; --purple: #a855f7; --blue: #3b82f6;
+    --pink: #8b5cf6; --purple: #a855f7; --blue: #3b82f6;
     --green: #34d399; --err: #f87171; --warn: #fbbf24;
-    --grad: linear-gradient(90deg, var(--pink), var(--purple));
+    --grad: linear-gradient(92deg, #7c3aed, #a855f7 55%, #d946ef);
     --rail-w: 208px; --insp-w: 250px; --tl-h: 236px;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  ::selection { background: rgba(236,72,153,.35); }
+  ::selection { background: rgba(139,92,246,.35); }
   html { scroll-behavior: smooth; }
   body {
     background: var(--bg); color: var(--text);
@@ -25,7 +25,7 @@
     height: 100vh; overflow: hidden;
     background-image:
       radial-gradient(1000px 500px at 90% -15%, rgba(168,85,247,.13), transparent 70%),
-      radial-gradient(800px 420px at 5% -15%, rgba(236,72,153,.10), transparent 70%);
+      radial-gradient(800px 420px at 5% -15%, rgba(139,92,246,.10), transparent 70%);
   }
   ::-webkit-scrollbar { width: 9px; height: 9px; }
   ::-webkit-scrollbar-thumb { background: var(--card3); border-radius: 999px; }
@@ -44,16 +44,17 @@
     background: rgba(19,19,24,.75); backdrop-filter: blur(8px);
     flex-shrink: 0;
   }
-  .logo { font-weight: 900; font-size: 1.02rem; letter-spacing: -.02em;
-    background: linear-gradient(92deg, var(--pink), var(--purple));
+  .logo { font-weight: 900; font-size: 1.02rem; letter-spacing: -.02em; border: none; padding: 0; cursor: pointer;
+    background: linear-gradient(92deg, #7c3aed, #c084fc);
     -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .logo:hover { filter: brightness(1.2); }
   .top-mid { flex: 1; display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
   .badge {
     display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px;
     border-radius: 999px; border: 1px solid rgba(52,211,153,.35); background: rgba(52,211,153,.08);
     color: var(--green); font-size: .74rem; font-weight: 600; white-space: nowrap;
   }
-  .badge.blue { border-color: rgba(59,130,246,.4); background: rgba(59,130,246,.08); color: #93c5fd; }
+  .badge.blue { border-color: rgba(139,92,246,.4); background: rgba(139,92,246,.1); color: #c4b5fd; }
   .badge.gray { border-color: var(--line-strong); background: var(--card2); color: var(--dim); }
   .badge svg { width: 12px; height: 12px; }
   .mode-switch { display: flex; gap: 4px; background: var(--card2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; }
@@ -150,8 +151,8 @@
     transition: border-color .15s, background .15s;
   }
   .sfx-chip svg { width: 12px; height: 12px; color: var(--pink); }
-  .sfx-chip:hover { border-color: var(--pink); background: rgba(236,72,153,.08); }
-  .sfx-chip.playing { border-color: var(--pink); background: rgba(236,72,153,.16); }
+  .sfx-chip:hover { border-color: var(--pink); background: rgba(139,92,246,.08); }
+  .sfx-chip.playing { border-color: var(--pink); background: rgba(139,92,246,.16); }
   .sfx-hint { color: var(--dim); font-size: .72rem; margin-top: 8px; line-height: 1.5; }
   .sfx-hint code { background: var(--card2); border: 1px solid var(--line); border-radius: 5px; padding: 0 6px; font-size: .7rem; color: #f9a8c9; }
 
@@ -173,7 +174,7 @@
   .clip-card .thumb img { width: 100%; display: block; aspect-ratio: 16/9; object-fit: cover; opacity: .9; }
   .clip-card .thumb:hover img { opacity: 1; }
   .clip-card .score { position: absolute; top: 8px; right: 8px; padding: 3px 9px; border-radius: 999px; font-weight: 800; font-size: .72rem; color: #fff; }
-  .score.hi { background: linear-gradient(90deg, #f43f5e, #ec4899); }
+  .score.hi { background: linear-gradient(90deg, #f43f5e, #8b5cf6); }
   .score.mid { background: linear-gradient(90deg, #f59e0b, #f97316); }
   .score.lo { background: var(--card3); color: var(--dim); }
   .clip-card .body { padding: 11px 13px 13px; }
@@ -189,7 +190,7 @@
     border: 1.5px dashed var(--line-strong); border-radius: 18px; padding: 54px 34px; text-align: center;
     transition: border-color .18s, background .18s, transform .18s; cursor: pointer; max-width: 460px;
   }
-  #dropzone:hover, #dropzone.drag { border-color: var(--pink); background: rgba(236,72,153,.05); transform: translateY(-1px); }
+  #dropzone:hover, #dropzone.drag { border-color: var(--pink); background: rgba(139,92,246,.05); transform: translateY(-1px); }
   #dropzone .big { color: var(--pink); }
   #dropzone .big svg { width: 46px; height: 46px; }
   #dropzone h3 { margin-top: 14px; font-size: 1.1rem; font-weight: 700; }
@@ -212,12 +213,12 @@
   .ai-toast {
     position: absolute; top: 14px; left: 50%; transform: translateX(-50%) translateY(-6px);
     display: flex; align-items: center; gap: 10px;
-    background: rgba(19,19,24,.92); border: 1px solid rgba(236,72,153,.45); border-radius: 999px;
+    background: rgba(19,19,24,.92); border: 1px solid rgba(139,92,246,.45); border-radius: 999px;
     padding: 8px 16px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s;
     box-shadow: 0 10px 34px rgba(0,0,0,.5); max-width: 90%; z-index: 30;
   }
   .ai-toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .ai-toast .spin { width: 15px; height: 15px; border: 2px solid rgba(236,72,153,.25); border-top-color: var(--pink); border-radius: 999px; animation: rot .8s linear infinite; flex-shrink: 0; }
+  .ai-toast .spin { width: 15px; height: 15px; border: 2px solid rgba(139,92,246,.25); border-top-color: var(--pink); border-radius: 999px; animation: rot .8s linear infinite; flex-shrink: 0; }
   @keyframes rot { to { transform: rotate(360deg); } }
   .ai-toast .txt { font-size: .8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ai-toast .pct { font-size: .74rem; font-weight: 800; color: var(--pink); font-variant-numeric: tabular-nums; }
@@ -252,13 +253,13 @@
   .cut-overlay { position: absolute; top: 0; bottom: 0; background: repeating-linear-gradient(45deg, rgba(248,113,113,.34) 0 6px, rgba(248,113,113,.16) 6px 12px); border-left: 1px solid rgba(248,113,113,.7); border-right: 1px solid rgba(248,113,113,.7); }
   .clip-block {
     position: absolute; top: 5px; bottom: 5px; border-radius: 8px;
-    background: linear-gradient(180deg, rgba(236,72,153,.4), rgba(168,85,247,.22));
-    border: 1px solid rgba(236,72,153,.75); color: #fff; font-size: .62rem; font-weight: 800;
+    background: linear-gradient(180deg, rgba(139,92,246,.4), rgba(168,85,247,.22));
+    border: 1px solid rgba(139,92,246,.75); color: #fff; font-size: .62rem; font-weight: 800;
     padding: 3px 7px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer;
     transition: box-shadow .15s;
   }
-  .clip-block:hover { box-shadow: 0 0 14px rgba(236,72,153,.5); }
-  .clip-block.active { box-shadow: 0 0 18px rgba(236,72,153,.9); }
+  .clip-block:hover { box-shadow: 0 0 14px rgba(139,92,246,.5); }
+  .clip-block.active { box-shadow: 0 0 18px rgba(139,92,246,.9); }
   /* captions track blocks */
   .cap-block { position: absolute; top: 6px; bottom: 6px; border-radius: 5px; background: rgba(59,130,246,.35); border: 1px solid rgba(59,130,246,.6); cursor: pointer; }
   .cap-block:hover { background: rgba(59,130,246,.55); }
@@ -281,6 +282,130 @@
 
   /* upload kit rows reuse cap-row */
   footer-space { display: none; }
+
+  /* ═══ HOME / MAIN MENU (capcut-style landing) ═══ */
+  .home[hidden], .app[hidden] { display: none !important; }
+  .home {
+    position: fixed; inset: 0; z-index: 400; display: flex; background: var(--bg);
+    background-image:
+      radial-gradient(1100px 620px at 86% -22%, rgba(168,85,247,.24), transparent 70%),
+      radial-gradient(760px 460px at -6% -8%, rgba(139,92,246,.20), transparent 70%);
+  }
+  .home-side {
+    width: 236px; flex-shrink: 0; border-right: 1px solid var(--line); padding: 18px 14px;
+    background: rgba(13,13,18,.82); backdrop-filter: blur(10px);
+    display: flex; flex-direction: column; gap: 3px; overflow-y: auto;
+  }
+  .home-side .logo { font-size: 1.04rem; padding: 2px 8px 14px; text-align: left; width: 100%; }
+  .user-chip { display: flex; align-items: center; gap: 10px; background: var(--card);
+    border: 1px solid rgba(139,92,246,.28); border-radius: 14px; padding: 10px 11px; margin-bottom: 16px; }
+  .user-chip .av { width: 34px; height: 34px; border-radius: 50%; background: var(--grad); flex-shrink: 0;
+    display: grid; place-items: center; font-weight: 900; font-size: .9rem; color: #fff; }
+  .user-chip .nm { font-weight: 800; font-size: .84rem; line-height: 1.2; }
+  .user-chip .sub { color: var(--dim); font-size: .68rem; margin-top: 2px; }
+  .h-sec { color: var(--dim); font-size: .65rem; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .1em; margin: 16px 10px 5px; }
+  .hnav {
+    display: flex; align-items: center; gap: 10px; width: 100%; background: transparent; border: none;
+    color: var(--dim); padding: 10px 12px; border-radius: 11px; font-weight: 700; font-size: .88rem;
+    text-align: left; transition: background .14s, color .14s;
+  }
+  .hnav svg { width: 17px; height: 17px; flex-shrink: 0; }
+  .hnav:hover { background: var(--card2); color: var(--text); }
+  .hnav.active { background: var(--grad); color: #fff; box-shadow: 0 8px 22px rgba(124,58,237,.35); }
+  .hnav .tag { margin-left: auto; font-size: .58rem; font-weight: 800; letter-spacing: .04em;
+    background: rgba(217,70,239,.16); color: #f0abfc; border: 1px solid rgba(217,70,239,.45);
+    border-radius: 999px; padding: 2px 7px; }
+  .home-side .foot { margin-top: auto; padding-top: 18px; }
+  .home-side .foot .hint { margin-top: 0; font-size: .72rem; }
+
+  .home-main { flex: 1; overflow-y: auto; padding: 24px 34px 46px; }
+  .home-view { display: none; max-width: 1160px; margin: 0 auto; }
+  .home-view.active { display: block; animation: pop .2s cubic-bezier(.2,.8,.2,1); }
+  .hv-title { font-size: 1.5rem; font-weight: 900; letter-spacing: -.03em; }
+  .hv-sub { color: var(--dim); font-size: .88rem; margin-top: 7px; line-height: 1.6; max-width: 720px; }
+  .hv-sub b { color: var(--text); }
+  .hp-h { font-size: .76rem; font-weight: 800; text-transform: uppercase; letter-spacing: .1em;
+    color: var(--dim); margin: 26px 0 12px; }
+
+  .hp-banner {
+    width: 100%; border: none; border-radius: 20px; padding: 44px 30px; cursor: pointer; position: relative;
+    overflow: hidden; display: flex; align-items: center; justify-content: center; gap: 16px;
+    background: var(--grad); color: #fff; font-size: 1.7rem; font-weight: 900; letter-spacing: -.03em;
+    box-shadow: 0 22px 60px rgba(124,58,237,.35); transition: transform .18s, box-shadow .18s;
+  }
+  .hp-banner:hover { transform: translateY(-2px); box-shadow: 0 28px 74px rgba(124,58,237,.5); }
+  .hp-banner::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(560px 190px at 22% 0%, rgba(255,255,255,.28), transparent 62%); }
+  .hp-banner .plus { width: 44px; height: 44px; border-radius: 13px; background: rgba(0,0,0,.3);
+    display: grid; place-items: center; flex-shrink: 0; }
+  .hp-banner .plus svg { width: 22px; height: 22px; }
+
+  .hp-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 12px; margin-top: 14px; }
+  .tool-card {
+    position: relative; background: var(--card); border: 1px solid var(--line); border-radius: 15px;
+    padding: 15px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 7px;
+    transition: border-color .16s, transform .16s, background .16s;
+  }
+  .tool-card:hover { border-color: rgba(168,85,247,.65); transform: translateY(-2px); background: var(--card2); }
+  .tool-card .ic { width: 34px; height: 34px; border-radius: 10px; background: rgba(139,92,246,.16);
+    border: 1px solid rgba(139,92,246,.38); display: grid; place-items: center; color: #c4b5fd; }
+  .tool-card .ic svg { width: 17px; height: 17px; }
+  .tool-card .t { font-weight: 800; font-size: .92rem; }
+  .tool-card .d { color: var(--dim); font-size: .75rem; line-height: 1.5; }
+  .tool-card .pill { position: absolute; top: 13px; right: 13px; font-size: .58rem; font-weight: 800;
+    letter-spacing: .05em; background: rgba(217,70,239,.16); color: #f0abfc;
+    border: 1px solid rgba(217,70,239,.45); border-radius: 999px; padding: 3px 8px; }
+
+  .extract-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .big-tool {
+    display: flex; gap: 14px; align-items: flex-start; text-align: left; cursor: pointer;
+    background: linear-gradient(180deg, rgba(139,92,246,.15), rgba(19,19,24,.55));
+    border: 1px solid rgba(139,92,246,.3); border-radius: 18px; padding: 19px;
+    transition: transform .16s, border-color .16s, box-shadow .16s;
+  }
+  .big-tool:hover { transform: translateY(-2px); border-color: rgba(168,85,247,.7); box-shadow: 0 16px 40px rgba(124,58,237,.22); }
+  .big-tool .ic { width: 46px; height: 46px; border-radius: 14px; background: var(--grad); color: #fff;
+    display: grid; place-items: center; flex-shrink: 0; box-shadow: 0 10px 26px rgba(124,58,237,.4); }
+  .big-tool .ic svg { width: 22px; height: 22px; }
+  .big-tool .t { font-weight: 800; font-size: 1rem; }
+  .big-tool .d { color: var(--dim); font-size: .79rem; line-height: 1.55; margin-top: 5px; }
+  .big-tool .go { display: inline-flex; align-items: center; gap: 6px; margin-top: 11px; color: #c084fc;
+    font-size: .76rem; font-weight: 800; }
+  .big-tool .go svg { width: 13px; height: 13px; }
+
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 12px; }
+  .step { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+  .step .n { width: 24px; height: 24px; border-radius: 8px; background: var(--grad); color: #fff;
+    display: grid; place-items: center; font-size: .74rem; font-weight: 900; margin-bottom: 9px; }
+  .step .t { font-weight: 700; font-size: .84rem; }
+  .step .d { color: var(--dim); font-size: .74rem; line-height: 1.5; margin-top: 4px; }
+
+  /* extractor tool view */
+  .ex-card { background: var(--card); border: 1px solid rgba(139,92,246,.3); border-radius: 18px;
+    padding: 20px; margin-top: 18px; max-width: 760px; }
+  .seg { display: inline-flex; gap: 4px; background: var(--card2); border: 1px solid var(--line);
+    border-radius: 11px; padding: 4px; margin-bottom: 14px; }
+  .seg button { border: none; background: transparent; color: var(--dim); font-weight: 700;
+    font-size: .82rem; padding: 8px 15px; border-radius: 8px; transition: all .15s; }
+  .seg button.active { background: var(--grad); color: #fff; }
+  .yt-row.big input { padding: 13px 14px; font-size: .92rem; }
+  .yt-row.big .btn { padding: 13px 20px; font-size: .9rem; }
+  .ex-note { display: flex; gap: 10px; align-items: flex-start; background: var(--card);
+    border: 1px solid var(--line); border-radius: 13px; padding: 13px 14px; }
+  .ex-note svg { width: 16px; height: 16px; color: #c084fc; flex-shrink: 0; margin-top: 1px; }
+  .ex-note .t { font-weight: 700; font-size: .82rem; }
+  .ex-note .d { color: var(--dim); font-size: .75rem; line-height: 1.5; margin-top: 3px; }
+
+  @media (max-width: 980px) {
+    .home-side { width: 66px; padding: 16px 8px; align-items: center; }
+    .home-side .logo { font-size: .78rem; text-align: center; padding: 2px 0 12px; }
+    .home-side .txt, .h-sec, .user-chip .meta, .hnav .tag, .home-side .foot { display: none; }
+    .user-chip { padding: 6px; justify-content: center; }
+    .hnav { justify-content: center; padding: 11px 0; }
+    .home-main { padding: 18px 16px 40px; }
+    .extract-grid { grid-template-columns: 1fr; }
+  }
 
   /* keys modal */
   .modal-back { position: fixed; inset: 0; z-index: 300; background: rgba(6,6,9,.72); backdrop-filter: blur(5px); display: grid; place-items: center; padding: 20px; }
@@ -307,11 +432,135 @@
 </style>
 </head>
 <body>
-<div class="app">
+
+<!-- ═══ HOME / MAIN MENU ═══ -->
+<div class="home" id="home">
+  <aside class="home-side">
+    <button class="logo" id="sideLogo">MIZVILLAN STUDIO</button>
+    <div class="user-chip">
+      <div class="av">M</div>
+      <div class="meta">
+        <div class="nm">mizvillan</div>
+        <div class="sub">studio · runs on your pc</div>
+      </div>
+    </div>
+
+    <div class="h-sec">menu</div>
+    <button class="hnav active" data-nav="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span class="txt">home</span></button>
+    <button class="hnav" data-nav="extract"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/></svg><span class="txt">extractors</span><span class="tag">new</span></button>
+
+    <div class="h-sec">create</div>
+    <button class="hnav" data-open="editor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 9h20"/><path d="M8 4l2 5"/><path d="M14 4l2 5"/><path d="M10 13.5v3l3-1.5z" fill="currentColor" stroke="none"/></svg><span class="txt">video editor</span></button>
+    <button class="hnav" data-open="editor" data-mode="clips"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span class="txt">clip hunter</span><span class="tag">ai</span></button>
+    <button class="hnav" data-open="editor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><span class="txt">captions</span></button>
+
+    <div class="foot">
+      <div class="hint">nothing uploads anywhere — links get pulled to <code>your pc</code> by the studio server.</div>
+    </div>
+  </aside>
+
+  <div class="home-main">
+    <!-- HOME VIEW -->
+    <div class="home-view active" id="hv-home">
+      <button class="hp-banner" data-open="editor">
+        <span class="plus"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+        create project
+      </button>
+
+      <div class="hp-row">
+        <button class="tool-card" data-ex="video">
+          <span class="pill">link</span>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 9h20"/><path d="M10 13.5v3l3-1.5z" fill="currentColor" stroke="none"/></svg></span>
+          <span class="t">video extractor</span>
+          <span class="d">paste a youtube link, pull the video straight into the editor.</span>
+        </button>
+        <button class="tool-card" data-ex="audio">
+          <span class="pill">new</span>
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+          <span class="t">audio extractor</span>
+          <span class="d">rip the sound off any link as a clean mp3.</span>
+        </button>
+        <button class="tool-card" data-open="editor" data-mode="clips">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+          <span class="t">clip hunter</span>
+          <span class="d">ai hunts the viral moments, exports them vertical.</span>
+        </button>
+        <button class="tool-card" data-open="editor">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.12 15.88"/><path d="M14.47 14.48L20 20"/><path d="M8.12 8.12L12 12"/></svg></span>
+          <span class="t">auto-cut</span>
+          <span class="d">kills the dead air, then you drop sfx on the timeline.</span>
+        </button>
+        <button class="tool-card" data-open="editor">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+          <span class="t">ai captions</span>
+          <span class="d">whisper writes every word, styled pink &amp; loud.</span>
+        </button>
+      </div>
+
+      <div class="hp-h">extract from a link</div>
+      <div class="extract-grid">
+        <button class="big-tool" data-ex="video">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 9h20"/><path d="M10 13.5v3l3-1.5z" fill="currentColor" stroke="none"/></svg></span>
+          <span>
+            <span class="t">video extractor</span>
+            <span class="d">drop a youtube video or shorts link — pulls up to 1080p onto your pc, opens the editor and the clip hunter goes straight to work. up to 30 min.</span>
+            <span class="go">open extractor <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </span>
+        </button>
+        <button class="big-tool" data-ex="audio">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+          <span>
+            <span class="t">audio extractor</span>
+            <span class="d">same link, audio only — get a 192kbps mp3 of the song, vod or voiceover to drop into your edit or your discord.</span>
+            <span class="go">open extractor <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+          </span>
+        </button>
+      </div>
+
+      <div class="hp-h">how it works</div>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><div class="t">bring the media</div><div class="d">paste a link or drop your own file — links pull to your pc, files never leave it.</div></div>
+        <div class="step"><div class="n">2</div><div class="t">let the ai cook</div><div class="d">auto-cut, whisper captions and the clip scout all run in one click.</div></div>
+        <div class="step"><div class="n">3</div><div class="t">export the short</div><div class="d">9:16 with burned captions, ready for tiktok, shorts and reels.</div></div>
+        <div class="step"><div class="n">4</div><div class="t">post it</div><div class="d">titles, hashtags and the clip list come out with it.</div></div>
+      </div>
+    </div>
+
+    <!-- EXTRACTOR VIEW -->
+    <div class="home-view" id="hv-extract">
+      <h2 class="hv-title">link extractor</h2>
+      <p class="hv-sub">paste a youtube video, short or music link. <b>video</b> opens it in the editor and sends the clip hunter at it · <b>audio</b> hands you the mp3.</p>
+
+      <div class="ex-card">
+        <div class="seg" id="exKind">
+          <button class="active" data-kind="video">video extractor</button>
+          <button data-kind="audio">audio extractor</button>
+        </div>
+        <div class="yt-row big">
+          <input type="text" id="exUrl" placeholder="https://www.youtube.com/watch?v=..." spellcheck="false" autocomplete="off">
+          <button class="btn" id="exBtn">extract</button>
+        </div>
+        <div class="progress-outer" id="exProgress" hidden><div class="progress-inner" id="exFill"></div></div>
+        <div class="hint" id="exStatus">video pulls up to 30 min at 1080p · audio pulls any length as a 192kbps mp3.</div>
+        <div class="err" id="exErr" hidden></div>
+        <div class="ok" id="exOk" hidden></div>
+      </div>
+
+      <div class="hp-h">what happens</div>
+      <div class="steps">
+        <div class="ex-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 19h16"/></svg><div><div class="t">lands on your pc</div><div class="d">the studio server (running on your machine) pulls it with yt-dlp into <code>_yt/</code> — never uploaded anywhere.</div></div></div>
+        <div class="ex-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><div><div class="t">video = straight to clip hunter</div><div class="d">it switches to clip hunter mode, transcribes the whole thing and drops scored clips on your timeline.</div></div></div>
+        <div class="ex-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg><div><div class="t">audio = mp3 download</div><div class="d">converted with ffmpeg to 192kbps mp3 and dropped straight into your downloads.</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="app" id="editorApp" hidden>
 
   <!-- ═══ TOP BAR ═══ -->
   <div class="topbar">
-    <div class="logo">MIZVILLAN STUDIO</div>
+    <button class="logo" id="homeBtn" title="back to home">MIZVILLAN STUDIO</button>
     <div class="top-mid">
       <div class="badge" id="brainBadge">checking the ai brain...</div>
       <div class="badge blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>footage never leaves your pc</div>
@@ -750,6 +999,39 @@ let ytBusy = false;
 $('ytBtn').addEventListener('click', ytPull);
 $('ytUrl').addEventListener('keydown', (e) => { if (e.key === 'Enter') ytPull(); });
 
+/* shared pull plumbing — the editor card and the home extractor both use this */
+async function startPull(url, kind) {
+  const r = await fetch(state.apiBase + '/api/yt', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, kind }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.job) throw new Error(d.error || 'the server said no');
+  return d.job;
+}
+async function fetchPulled(job) {
+  const res = await fetch(state.apiBase + job.file);
+  if (!res.ok) throw new Error('couldnt fetch the pulled file');
+  return res.blob();
+}
+function pullName(job, ext) {
+  return ((job.title || 'youtube').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 60) || 'youtube') + '.' + ext;
+}
+function downloadBlob(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 8000);
+}
+async function loadPulledVideo(job, blob) {
+  document.querySelector('.mode-switch button[data-mode="clips"]').click();
+  await loadFile(new File([blob], pullName(job, 'mp4'), { type: 'video/mp4' }));
+  if (!state.mono) throw new Error('that video has no readable audio track');
+  setAI('clip hunter is on it...', 12);
+  setTimeout(() => $('huntBtn').click(), 450);
+}
+
 async function ytPull() {
   const err = $('ytErr'), btn = $('ytBtn');
   err.hidden = true;
@@ -765,26 +1047,14 @@ async function ytPull() {
   ytBusy = true; btn.disabled = true;
   $('ytProgress').hidden = false; $('ytFill').style.width = '4%';
   try {
-    const r = await fetch(state.apiBase + '/api/yt', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url }),
-    });
-    const d = await r.json().catch(() => ({}));
-    if (!r.ok || !d.job) throw new Error(d.error || 'the server said no');
-    const job = await ytPoll(d.job);
+    const id = await startPull(url, 'video');
+    const job = await ytPoll(id);
     $('ytFill').style.width = '100%';
     setAI('loading it into the studio...', 97);
     $('ytStatus').textContent = `got “${job.title || 'the video'}” — reading it...`;
-    const res = await fetch(state.apiBase + job.file);
-    if (!res.ok) throw new Error('couldnt fetch the pulled video');
-    const blob = await res.blob();
-    const clean = (job.title || 'youtube').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 60) || 'youtube';
-    document.querySelector('.mode-switch button[data-mode="clips"]').click();
-    await loadFile(new File([blob], clean + '.mp4', { type: 'video/mp4' }));
-    if (!state.mono) throw new Error('that video has no readable audio track');
+    const blob = await fetchPulled(job);
+    await loadPulledVideo(job, blob);
     $('ytStatus').innerHTML = `pulled ✅ <b>${escapeHtml(job.title || '')}</b> — clip hunter is reading it now`;
-    setAI('clip hunter is on it...', 12);
-    setTimeout(() => $('huntBtn').click(), 450);
   } catch (e) {
     err.textContent = 'link pull failed: ' + (e.message || e);
     err.hidden = false;
@@ -796,7 +1066,7 @@ async function ytPull() {
   }
 }
 
-async function ytPoll(id) {
+async function ytPoll(id, ui = { fill: $('ytFill'), status: $('ytStatus') }) {
   const t0 = Date.now();
   for (;;) {
     if (Date.now() - t0 > 600000) throw new Error('that pull took over 10 min — try again');
@@ -810,11 +1080,95 @@ async function ytPoll(id) {
     if (fatal) throw new Error(fatal);
     if (j.status === 'error') throw new Error(j.error || 'youtube said no');
     const pct = j.pct || 4;
-    $('ytFill').style.width = pct + '%';
+    ui.fill.style.width = pct + '%';
     const label = (YT_PHASE[j.status] || 'working') + (j.title ? ` — ${j.title}` : '');
-    $('ytStatus').textContent = j.status === 'downloading' ? `${label} · ${pct}%` : label;
-    setAI($('ytStatus').textContent, pct);
+    ui.status.textContent = j.status === 'downloading' ? `${label} · ${pct}%` : label;
+    setAI(ui.status.textContent, pct);
     if (j.status === 'done') return j;
+  }
+}
+
+/* ── home / main menu ── */
+const homeEl = $('home'), editorEl = $('editorApp');
+function showView(id) {
+  document.querySelectorAll('.home-view').forEach((v) => v.classList.toggle('active', v.id === id));
+  const nav = id === 'hv-extract' ? 'extract' : 'home';
+  document.querySelectorAll('.hnav[data-nav]').forEach((b) => b.classList.toggle('active', b.dataset.nav === nav));
+}
+function openHome() { editorEl.hidden = true; homeEl.hidden = false; showView('hv-home'); }
+function openEditor(mode) {
+  homeEl.hidden = true; editorEl.hidden = false;
+  if (mode) document.querySelector(`.mode-switch button[data-mode="${mode}"]`)?.click();
+  sizePreview(); if (state.file) tlBuild();
+  requestAnimationFrame(() => { sizePreview(); tlDrawRuler(); });
+}
+$('homeBtn').addEventListener('click', openHome);
+$('sideLogo').addEventListener('click', openHome);
+document.querySelectorAll('[data-open="editor"]').forEach((b) =>
+  b.addEventListener('click', () => openEditor(b.dataset.mode)));
+document.querySelectorAll('.hnav[data-nav]').forEach((b) =>
+  b.addEventListener('click', () => showView(b.dataset.nav === 'extract' ? 'hv-extract' : 'hv-home')));
+
+let exKind = 'video', exBusy = false;
+const EX_HINT = {
+  video: 'video extractor — pulls up to 30 min at 1080p, opens the editor and sends the clip hunter at it.',
+  audio: 'audio extractor — rips the sound off any length as a 192kbps mp3, straight to your downloads.',
+};
+document.querySelectorAll('#exKind button').forEach((b) => b.addEventListener('click', () => {
+  exKind = b.dataset.kind;
+  document.querySelectorAll('#exKind button').forEach((x) => x.classList.toggle('active', x === b));
+  $('exStatus').textContent = EX_HINT[exKind];
+  $('exErr').hidden = true; $('exOk').hidden = true;
+}));
+document.querySelectorAll('[data-ex]').forEach((b) => b.addEventListener('click', () => {
+  showView('hv-extract');
+  document.querySelector(`#exKind button[data-kind="${b.dataset.ex}"]`)?.click();
+  setTimeout(() => $('exUrl').focus(), 60);
+}));
+$('exBtn').addEventListener('click', extractPull);
+$('exUrl').addEventListener('keydown', (e) => { if (e.key === 'Enter') extractPull(); });
+
+async function extractPull() {
+  const err = $('exErr'), ok = $('exOk'), btn = $('exBtn');
+  err.hidden = true; ok.hidden = true;
+  const url = $('exUrl').value.trim();
+  if (!url) { err.textContent = 'paste a youtube link first'; err.hidden = false; return; }
+  if (!YT_OK.test(url)) { err.textContent = 'thats not a youtube link — need youtube.com/... or youtu.be/...'; err.hidden = false; return; }
+  if (exBusy) return;
+  if (!state.serverUp) {
+    err.innerHTML = 'extracting needs the <b>studio server</b> running on your pc — start it with <code>py studio-server.py</code> and leave that window open, then hit extract again.';
+    err.hidden = false;
+    return;
+  }
+  exBusy = true; btn.disabled = true;
+  $('exProgress').hidden = false; $('exFill').style.width = '4%';
+  try {
+    const id = await startPull(url, exKind);
+    const job = await ytPoll(id, { fill: $('exFill'), status: $('exStatus') });
+    $('exFill').style.width = '100%';
+    if (exKind === 'audio') {
+      $('exStatus').textContent = `converting done — handing you “${job.title || 'the audio'}”`;
+      const blob = await fetchPulled(job);
+      const name = pullName(job, 'mp3');
+      downloadBlob(blob, name);
+      ok.textContent = `✅ downloaded ${name} — check your downloads folder`;
+      ok.hidden = false;
+      $('exStatus').textContent = EX_HINT.audio;
+    } else {
+      $('exStatus').textContent = `got “${job.title || 'the video'}” — opening the editor...`;
+      const blob = await fetchPulled(job);
+      openEditor('clips');
+      await loadPulledVideo(job, blob);
+      $('exStatus').textContent = `pulled ✅ ${job.title || 'the video'} — clip hunter is reading it now`;
+    }
+  } catch (e) {
+    err.textContent = 'extract failed: ' + (e.message || e);
+    err.hidden = false;
+    clearAI();
+    $('exStatus').textContent = EX_HINT[exKind];
+  } finally {
+    exBusy = false; btn.disabled = false;
+    setTimeout(() => { $('exProgress').hidden = true; $('exFill').style.width = '0%'; }, 1400);
   }
 }
 
@@ -1668,7 +2022,7 @@ function drawFrame(ctx, W, H, t, showCaps) {
         const ww = ctx.measureText(w).width;
         const cx = x + ww / 2;
         ctx.lineWidth = fs * 0.09; ctx.strokeStyle = '#000'; ctx.strokeText(w, cx, y);
-        ctx.fillStyle = wi === activeWordIdx ? '#ec4899' : '#ffffff';
+        ctx.fillStyle = wi === activeWordIdx ? '#8b5cf6' : '#ffffff';
         ctx.fillText(w, cx, y);
         x += ww + gap;
       });
@@ -1676,7 +2030,7 @@ function drawFrame(ctx, W, H, t, showCaps) {
       ctx.lineWidth = fs * 0.09; ctx.strokeStyle = '#000';
       ctx.strokeText(line, W / 2, y);
       if (state.style === 'mizvillan') {
-        ctx.fillStyle = 'rgba(236,72,153,0.85)';
+        ctx.fillStyle = 'rgba(139,92,246,0.85)';
         ctx.fillText(line, W / 2 + fs * 0.045, y + fs * 0.045);
       }
       ctx.fillStyle = '#ffffff';

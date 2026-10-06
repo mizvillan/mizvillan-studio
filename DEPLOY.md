@@ -31,15 +31,28 @@ git push
 GitHub Pages rebuilds automatically (~1 min). Settings live at
 https://github.com/mizvillan/mizvillan-studio/settings/pages (source: `master`, root).
 
+## 🏠 Home screen (main menu)
+
+Opening the site lands on the **home screen**: `create project` banner, quick
+tool cards (video extractor, audio extractor, clip hunter, auto-cut, captions)
+and an `extractors` view. The logo in the editor's top bar takes you back.
+
+- **video extractor** — pulls the link (up to 30 min / 1080p) into the editor,
+  flips to clip hunter and auto-runs it.
+- **audio extractor** — same link, audio only: ffmpeg converts it to a
+  192kbps mp3 that downloads straight to your pc.
+- The theme is purple (`--grad` violet → fuchsia) across home and editor.
+
 ## 🔗 YouTube link → short (runs on the local server only)
 
 Paste a youtube video/shorts link in the **youtube link → short** box on the
-import tab. The studio pulls the video, flips to **clip hunter**, transcribes it
-and drops the viral moments on the timeline — export one vertical and you've got
-your short. Long recordings of your own are still dropped in as files.
+import tab (or use the extractors on the home screen). The studio pulls the
+video, flips to **clip hunter**, transcribes it and drops the viral moments on
+the timeline — export one vertical and you've got your short. Long recordings
+of your own are still dropped in as files.
 
 - Needs `yt-dlp` + a static ffmpeg: `py -m pip install yt-dlp imageio-ffmpeg`
-- Pulled videos land in `_yt/` (gitignored, last 6 kept, ~30 min / 1080p max)
+- Pulled files land in `_yt/` (gitignored, last 6 kept) — video as `<id>.mp4`, audio as `<id>.audio.mp3`
 - Anything over ~13 min is transcribed in chunks — groq caps uploads at 25MB
 - **The live GitHub Pages site can't do this**: a static page can't reach
   youtube (CORS), so link pull only works when the studio runs from
