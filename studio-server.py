@@ -9,12 +9,16 @@ they're injected server-side and never printed anywhere.
 Run:  py studio-server.py
 Then open http://localhost:8787
 """
+import hashlib
 import json
 import mimetypes
 import os
 import re
+import shutil
 import sys
+import threading
 import urllib.error
+import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
@@ -28,6 +32,132 @@ BROWSER_UA = (
 )
 SFX_DIR = os.path.join(ROOT, "sfx")
 os.makedirs(SFX_DIR, exist_ok=True)  # user drops meme sounds here (vine boom etc.)
+
+# ── youtube link pull ────────────────────────────────────────────────
+# paste a link → yt-dlp grabs the video → the browser loads it → clip hunter
+# turns it into shorts. Files land in _yt/ (gitignored) and are served statically.
+try:
+    import yt_dlp
+except Exception:  # noqa: BLE001
+    yt_dlp = None
+
+def _find_ffmpeg():
+    # yt-dlp has to mux the separate video+audio streams youtube hands out,
+    # so we ship a static ffmpeg through imageio-ffmpeg if there isnt one.
+    try:
+        import imageio_ffmpeg
+        return imageio_ffmpeg.get_ffmpeg_exe()
+    except Exception:  # noqa: BLE001
+        return shutil.which("ffmpeg")
+
+FFMPEG = _find_ffmpeg()
+YT_DIR = os.path.join(ROOT, "_yt")
+os.makedirs(YT_DIR, exist_ok=True)
+YT_MAX_SECS = 30 * 60        # the browser has to hold the audio in RAM
+YT_MAX_FILES = 6             # keep the pull cache tidy
+YT_JOBS = {}
+YT_LOCK = threading.Lock()
+
+YT_FORMAT = "bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b"
+
+def _yt_set(job, **kw):
+    with YT_LOCK:
+        job.update(kw)
+
+def _yt_purge_cache():
+    try:
+        entries = [(os.path.getmtime(os.path.join(YT_DIR, f)), f) for f in os.listdir(YT_DIR)]
+    except OSError:
+        return
+    entries.sort(reverse=True)
+    for _, name in entries[YT_MAX_FILES:]:
+        try:
+            os.remove(os.path.join(YT_DIR, name))
+        except OSError:
+            pass
+
+def _yt_msg(err):
+    """yt-dlp errors are a wall of text — keep the first human line."""
+    line = str(err).strip().splitlines()
+    line = next((l for l in line if l.strip()), "download failed")
+    line = line.replace("ERROR:", "").replace("WARNING:", "").strip()
+    if "Sign in to confirm" in line:
+        return "youtube wants a login for this one — try another link"
+    if "Video unavailable" in line:
+        return "that video is unavailable (private / region locked?)"
+    if "Private video" in line:
+        return "that video is private"
+    return line[:300]
+
+def _yt_existing(vid):
+    """Cached pull for this video id, if the file is still around."""
+    for f in os.listdir(YT_DIR):
+        stem, ext = os.path.splitext(f)
+        if stem == vid and ext.lower() in (".mp4", ".mkv", ".webm"):
+            path = os.path.join(YT_DIR, f)
+            if os.path.isfile(path) and os.path.getsize(path) > 0:
+                return f
+    return None
+
+def yt_worker(job, url):
+    _yt_purge_cache()
+    if yt_dlp is None:
+        return _yt_set(job, status="error",
+                       error="yt-dlp isnt installed — run: py -m pip install yt-dlp")
+    if not FFMPEG:
+        return _yt_set(job, status="error",
+                       error="ffmpeg missing — run: py -m pip install imageio-ffmpeg")
+
+    opts = dict(
+        quiet=True, no_warnings=True, noprogress=True, noplaylist=True,
+        ffmpeg_location=FFMPEG,
+        format=YT_FORMAT,
+        merge_output_format="mp4",
+        outtmpl=os.path.join(YT_DIR, "%(id)s.%(ext)s"),
+    )
+    try:
+        _yt_set(job, status="meta", pct=3)
+        with yt_dlp.YoutubeDL(opts) as ydl:
+            info = ydl.extract_info(url, download=False)
+            if info.get("_type") in ("playlist", "multi_video"):
+                return _yt_set(job, status="error",
+                               error="thats a playlist — paste a single video/shorts link")
+            vid = info.get("id") or ""
+            title = (info.get("title") or "youtube video").strip()
+            dur = int(info.get("duration") or 0)
+            if not vid or not dur:
+                return _yt_set(job, status="error",
+                               error="couldnt read that link — is it a normal youtube url?")
+            if dur > YT_MAX_SECS:
+                return _yt_set(job, status="error",
+                               error=(f"that video is {dur // 60} min — link pull caps at "
+                                      f"{YT_MAX_SECS // 60} min. drop your own file for long stuff."))
+            _yt_set(job, title=title, duration=dur)
+
+            hit = _yt_existing(vid)
+            if not hit:
+                def hook(d):
+                    st = d.get("status")
+                    if st == "downloading":
+                        total = d.get("total_bytes") or d.get("total_bytes_estimate") or 0
+                        done = d.get("downloaded_bytes") or 0
+                        pct = int(done * 100 / total) if total else 0
+                        _yt_set(job, status="downloading", pct=min(pct, 93))
+                    elif st in ("finished", "processing"):
+                        _yt_set(job, status="merging", pct=95)
+                opts["progress_hooks"] = [hook]
+                with yt_dlp.YoutubeDL(opts) as ydl2:
+                    ydl2.extract_info(url, download=True)
+                hit = _yt_existing(vid)
+            if not hit:
+                return _yt_set(job, status="error", error="download finished but no file showed up")
+    except Exception as e:  # noqa: BLE001
+        return _yt_set(job, status="error", error=_yt_msg(e))
+
+    path = os.path.join(YT_DIR, hit)
+    _yt_set(job, status="done", pct=100, file="/_yt/" + hit, size=os.path.getsize(path))
+    print(f"[studio] pulled {title[:50]!r} -> {hit} ({os.path.getsize(path) // 1024} KB)",
+          file=sys.stderr)
 
 # .env files to mine for keys (siblings of this folder)
 ENV_CANDIDATES = [
@@ -128,6 +258,12 @@ class Handler(BaseHTTPRequestHandler):
             except OSError:
                 sounds = []
             return self.send_json({"sounds": sounds})
+        if path.startswith("/api/yt/progress/"):
+            job = YT_JOBS.get(path.rsplit("/", 1)[-1])
+            if not job:
+                return self.send_json({"error": "unknown pull job"}, 404)
+            with YT_LOCK:
+                return self.send_json(dict(job))
         # static files
         rel = path.lstrip("/") or "index.html"
         full = os.path.normpath(os.path.join(ROOT, rel))
@@ -137,15 +273,20 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             return
         ctype = mimetypes.guess_type(full)[0] or "application/octet-stream"
-        with open(full, "rb") as f:
-            body = f.read()
+        size = os.path.getsize(full)
         self.send_response(200)
         self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Content-Length", str(size))
         self.send_header("Cache-Control", "no-store")
         self.send_header("Access-Control-Allow-Origin", self._origin())
         self.end_headers()
-        self.wfile.write(body)
+        # pulled youtube files can be hundreds of MB — never buffer them whole
+        with open(full, "rb") as f:
+            while True:
+                chunk = f.read(1024 * 1024)
+                if not chunk:
+                    break
+                self.wfile.write(chunk)
 
     # ── AI proxies ────────────────────────────────────────────
     def do_POST(self):
@@ -156,12 +297,52 @@ class Handler(BaseHTTPRequestHandler):
                 return self.proxy_transcribe(body)
             if path == "/api/highlights":
                 return self.proxy_highlights(body)
+            if path == "/api/yt":
+                return self.yt_start(body)
             self.send_json({"error": "unknown endpoint"}, 404)
         except urllib.error.HTTPError as e:
             detail = e.read().decode("utf-8", "replace")[:400]
             self.send_json({"error": f"upstream {e.code}: {detail}"}, 502)
         except Exception as e:  # noqa: BLE001
             self.send_json({"error": str(e)}, 500)
+
+    # ── youtube link pull ────────────────────────────────────────
+    def yt_start(self, body):
+        if yt_dlp is None:
+            return self.send_json(
+                {"error": "yt-dlp isnt installed — run: py -m pip install yt-dlp"}, 503)
+        try:
+            data = json.loads(body.decode("utf-8"))
+        except json.JSONDecodeError:
+            return self.send_json({"error": "bad json"}, 400)
+
+        url = (data.get("url") or "").strip()
+        parts = urllib.parse.urlsplit(url)
+        host = (parts.hostname or "").lower()
+        yt_hosts = ("youtube.com", "youtu.be", "youtube-nocookie.com")
+        on_yt = any(host == h or host.endswith("." + h) for h in yt_hosts)
+        if parts.scheme not in ("http", "https") or not on_yt:
+            return self.send_json({"error": "thats not a youtube link"}, 400)
+
+        jid = hashlib.sha1(url.encode("utf-8")).hexdigest()[:16]
+        with YT_LOCK:
+            old = YT_JOBS.get(jid)
+            if old:
+                if old["status"] in ("queued", "meta", "downloading", "merging"):
+                    return self.send_json({"job": jid})   # already pulling it
+                if old["status"] == "done" and old.get("file") and os.path.isfile(
+                    os.path.join(ROOT, old["file"].lstrip("/"))
+                ):
+                    return self.send_json({"job": jid})   # cached — instant, no re-download
+                # error, or the cached file got purged → run it again below
+            job = {"id": jid, "status": "queued", "pct": 0, "url": url}
+            YT_JOBS[jid] = job
+            if len(YT_JOBS) > 12:                          # dont leak jobs forever
+                for k in list(YT_JOBS)[: len(YT_JOBS) - 12]:
+                    if YT_JOBS[k]["status"] not in ("meta", "downloading", "merging"):
+                        YT_JOBS.pop(k, None)
+        threading.Thread(target=yt_worker, args=(job, url), daemon=True).start()
+        return self.send_json({"job": jid}, 202)
 
     def proxy_transcribe(self, audio):
         keys = KEYS["groq"]

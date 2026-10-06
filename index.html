@@ -118,6 +118,17 @@
   .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .btn-block { width: 100%; margin-top: 12px; }
 
+  /* youtube link pull */
+  .yt-row { display: flex; gap: 8px; }
+  .yt-row input {
+    flex: 1; min-width: 0; background: var(--card2); border: 1px solid var(--line);
+    color: var(--text); border-radius: 9px; padding: 10px 12px; font-size: .86rem;
+    font-family: inherit; outline: none; transition: border-color .15s;
+  }
+  .yt-row input:focus { border-color: var(--pink); }
+  .yt-row .btn { flex-shrink: 0; padding: 10px 14px; }
+  .err a { color: var(--pink); text-decoration: underline; }
+
   .hint { color: var(--dim); font-size: .78rem; margin-top: 9px; line-height: 1.55; }
   .hint b { color: var(--text); font-weight: 600; }
   .err { color: var(--err); font-size: .8rem; margin-top: 9px; font-weight: 600; }
@@ -347,9 +358,19 @@
         <!-- IMPORT -->
         <section class="panel active" id="panel-import">
           <div class="card">
+            <h4>youtube link → short</h4>
+            <div class="yt-row">
+              <input type="text" id="ytUrl" placeholder="paste a youtube video / shorts link" spellcheck="false" autocomplete="off">
+              <button class="btn" id="ytBtn">pull</button>
+            </div>
+            <div class="progress-outer" id="ytProgress" hidden><div class="progress-inner" id="ytFill"></div></div>
+            <div class="hint" id="ytStatus">paste a link → studio grabs it → <b>clip hunter auto-runs</b> → export it vertical as a short.</div>
+            <div class="err" id="ytErr" hidden></div>
+          </div>
+          <div class="card">
             <h4>media</h4>
             <button class="btn btn-block" id="pickBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M17 8l-5-5-5 5"/><path d="M12 3v12"/></svg>pick a video</button>
-            <div class="hint"><b>long videos:</b> 20-60 min works — cloud whisper transcribes fast. <b>shorts:</b> anything under 3 min goes full auto.</div>
+            <div class="hint"><b>your long videos:</b> drop the file — 20-60 min works, cloud whisper transcribes fast. <b>shorts:</b> anything under 3 min goes full auto.</div>
             <div class="err" id="importErr" hidden></div>
           </div>
           <div class="card" id="fileInfo" hidden>
@@ -464,7 +485,7 @@
         <div id="dropzone">
           <div class="big"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="M2 9h20"/><path d="M8 4l2 5"/><path d="M14 4l2 5"/><path d="M10 13.5v3l3-1.5z" fill="currentColor" stroke="none"/></svg></div>
           <h3>drop your video here</h3>
-          <p>the full minecraft video, a raw vod, a clip — whatever. nothing uploads anywhere.</p>
+          <p>the full minecraft video, a raw vod, a clip — whatever. nothing uploads anywhere.<br>or paste a <b>youtube link</b> on the left and let the clip hunter at it.</p>
         </div>
         <input type="file" id="fileInput" accept="video/*" hidden>
         <div id="playerCard">
@@ -716,6 +737,86 @@ async function loadFile(file) {
 }
 window.__studioLoadFile = loadFile;
 window.__studioDebug = { state, TL: null };
+
+/* ── youtube link → clip hunter (links are for shorts, files are for long stuff) ── */
+const YT_OK = /^https?:\/\/([^/]+\.)?(youtube\.com|youtu\.be|youtube-nocookie\.com)\//i;
+const YT_PHASE = {
+  queued: 'queueing it up',
+  meta: 'reading the video',
+  downloading: 'pulling the video down',
+  merging: 'stitching video + audio together',
+};
+let ytBusy = false;
+$('ytBtn').addEventListener('click', ytPull);
+$('ytUrl').addEventListener('keydown', (e) => { if (e.key === 'Enter') ytPull(); });
+
+async function ytPull() {
+  const err = $('ytErr'), btn = $('ytBtn');
+  err.hidden = true;
+  const url = $('ytUrl').value.trim();
+  if (!url) { err.textContent = 'paste a youtube link first'; err.hidden = false; return; }
+  if (!YT_OK.test(url)) { err.textContent = 'thats not a youtube link — need youtube.com/... or youtu.be/...'; err.hidden = false; return; }
+  if (ytBusy) return;
+  if (!state.serverUp) {
+    err.innerHTML = 'link pull needs the <b>studio server</b> running on your pc — start it with <code>py studio-server.py</code> and leave that window open, then hit pull again. dropping a file still works right here.';
+    err.hidden = false;
+    return;
+  }
+  ytBusy = true; btn.disabled = true;
+  $('ytProgress').hidden = false; $('ytFill').style.width = '4%';
+  try {
+    const r = await fetch(state.apiBase + '/api/yt', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.job) throw new Error(d.error || 'the server said no');
+    const job = await ytPoll(d.job);
+    $('ytFill').style.width = '100%';
+    setAI('loading it into the studio...', 97);
+    $('ytStatus').textContent = `got “${job.title || 'the video'}” — reading it...`;
+    const res = await fetch(state.apiBase + job.file);
+    if (!res.ok) throw new Error('couldnt fetch the pulled video');
+    const blob = await res.blob();
+    const clean = (job.title || 'youtube').replace(/[\\/:*?"<>|]+/g, '').trim().slice(0, 60) || 'youtube';
+    document.querySelector('.mode-switch button[data-mode="clips"]').click();
+    await loadFile(new File([blob], clean + '.mp4', { type: 'video/mp4' }));
+    if (!state.mono) throw new Error('that video has no readable audio track');
+    $('ytStatus').innerHTML = `pulled ✅ <b>${escapeHtml(job.title || '')}</b> — clip hunter is reading it now`;
+    setAI('clip hunter is on it...', 12);
+    setTimeout(() => $('huntBtn').click(), 450);
+  } catch (e) {
+    err.textContent = 'link pull failed: ' + (e.message || e);
+    err.hidden = false;
+    clearAI();
+    $('ytStatus').textContent = 'paste a link → studio grabs it → clip hunter auto-runs → export it vertical as a short.';
+  } finally {
+    ytBusy = false; btn.disabled = false;
+    setTimeout(() => { $('ytProgress').hidden = true; $('ytFill').style.width = '0%'; }, 1400);
+  }
+}
+
+async function ytPoll(id) {
+  const t0 = Date.now();
+  for (;;) {
+    if (Date.now() - t0 > 600000) throw new Error('that pull took over 10 min — try again');
+    await new Promise((r) => setTimeout(r, 700));
+    let j = {}, fatal = null;
+    try {
+      const r = await fetch(state.apiBase + '/api/yt/progress/' + id, { signal: AbortSignal.timeout(8000) });
+      if (r.ok) j = await r.json().catch(() => ({}));
+      else fatal = (await r.json().catch(() => ({}))).error || `server said ${r.status}`;
+    } catch { /* one flaky poll shouldn't kill a 200MB download */ }
+    if (fatal) throw new Error(fatal);
+    if (j.status === 'error') throw new Error(j.error || 'youtube said no');
+    const pct = j.pct || 4;
+    $('ytFill').style.width = pct + '%';
+    const label = (YT_PHASE[j.status] || 'working') + (j.title ? ` — ${j.title}` : '');
+    $('ytStatus').textContent = j.status === 'downloading' ? `${label} · ${pct}%` : label;
+    setAI($('ytStatus').textContent, pct);
+    if (j.status === 'done') return j;
+  }
+}
 
 function sizePreview() {
   const ar = vid.videoWidth && vid.videoHeight ? vid.videoWidth / vid.videoHeight : 16 / 9;
@@ -1196,9 +1297,12 @@ $('transcribeBtn').addEventListener('click', async () => {
 });
 
 /* ── audio → 16kHz mono wav blob (feeds whisper) ── */
-function encodeWav16k() {
-  const mono = state.mono, sr = state.sampleRate;
-  if (!mono || !sr) throw new Error('no audio — re-import the video');
+function encodeWav16k(fromSec = 0, toSec = null) {
+  const src = state.mono, sr = state.sampleRate;
+  if (!src || !sr) throw new Error('no audio — re-import the video');
+  const a = Math.max(0, Math.min(src.length, Math.round((fromSec || 0) * sr)));
+  const b = toSec == null ? src.length : Math.max(a + 1, Math.min(src.length, Math.round(toSec * sr)));
+  const mono = src.subarray(a, b);
   const target = 16000, ratio = sr / target;
   const outLen = Math.max(1, Math.floor(mono.length / ratio));
   const buf = new ArrayBuffer(44 + outLen * 2);
@@ -1276,8 +1380,34 @@ async function directHighlights(transcript, style, maxClips, minLen, maxLen) {
 }
 
 async function cloudTranscribe() {
-  const wav = encodeWav16k();
-  setAI('sending audio to groq whisper-large...', 15);
+  // groq rejects uploads over 25MB — a 16kHz mono wav blows that at ~13min,
+  // so anything longer gets split and the timestamps stitched back together.
+  const dur = state.duration || (state.mono.length / state.sampleRate);
+  const CHUNK = 600;
+  const parts = [];
+  for (let t = 0; t < dur; t += CHUNK) parts.push([t, Math.min(t + CHUNK, dur)]);
+  const segs = [];
+  let text = '';
+  for (let i = 0; i < parts.length; i++) {
+    const [a, b] = parts[i];
+    const wav = encodeWav16k(a, b);
+    setAI(parts.length > 1
+      ? `groq whisper is listening — part ${i + 1} of ${parts.length}...`
+      : 'sending audio to groq whisper-large...', 15 + (45 * i) / parts.length);
+    const data = await groqTranscribeOne(wav);
+    if (data.text) text += (text ? ' ' : '') + data.text;
+    const chunk = (data.segments || [])
+      .map((s) => ({ start: s.start + a, end: s.end + a, text: s.text || '' }))
+      .filter((s) => s.end > s.start);
+    segs.push(...chunk);
+  }
+  setAI('transcript received ✅', 60);
+  if (!segs.length && (text || '')) segs.push({ start: 0, end: dur, text });
+  if (!text) text = segs.map((s) => s.text).join(' ').trim();
+  return { text, segments: segs };
+}
+
+async function groqTranscribeOne(wav) {
   let data;
   if (state.direct && state.keys.groq) {
     const fd = new FormData();
@@ -1296,10 +1426,7 @@ async function cloudTranscribe() {
     data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || `server said ${res.status}`);
   }
-  setAI('transcript received ✅', 60);
-  const segs = (data.segments || []).map((s) => ({ start: s.start, end: s.end, text: s.text || '' }));
-  if (!segs.length && data.text) segs.push({ start: 0, end: state.duration, text: data.text });
-  return { text: data.text || '', segments: segs };
+  return data;
 }
 
 let asr = null;
